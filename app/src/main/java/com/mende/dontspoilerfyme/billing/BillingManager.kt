@@ -4,6 +4,7 @@ package com.mende.dontspoilerfyme.billing
 import android.app.Activity
 import android.content.Context
 import com.android.billingclient.api.*
+import com.android.billingclient.api.PendingPurchasesParams
 
 class BillingManager(
     context: Context,
@@ -13,9 +14,14 @@ class BillingManager(
     private val onError: (String?) -> Unit
 ) : PurchasesUpdatedListener {
 
-    private val billingClient: BillingClient = BillingClient.newBuilder(context)
+    // ✅ Billing 7: enablePendingPurchases() deprecato → usare PendingPurchasesParams
+    private val billingClient: BillingClient = BillingClient.newBuilder(context.applicationContext)
         .setListener(this)
-        .enablePendingPurchases()
+        .enablePendingPurchases(
+            PendingPurchasesParams.newBuilder()
+                .enableOneTimeProducts() // INAPP (il tuo premium_unlock)
+                .build()
+        )
         .build()
 
     private var productDetails: ProductDetails? = null
