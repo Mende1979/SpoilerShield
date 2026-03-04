@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">SpoilerShield</string>
+    <string name="shortcut_shield_on_short">Enable Shield</string>
+    <string name="shortcut_shield_on_long">Enable Spoiler Shield</string>
+    <string name="shortcut_shield_off_short">Disable Shield</string>
+    <string name="shortcut_shield_off_long">Disable Spoiler Shield</string>
+    <string name="shortcut_unavailable">Unavailable</string>
+</resources>
