@@ -3,8 +3,8 @@ package com.mende.dontspoilerfyme.billing
 
 import android.app.Activity
 import android.content.Context
+import android.util.Log
 import com.android.billingclient.api.*
-import com.android.billingclient.api.PendingPurchasesParams
 
 class BillingManager(
     context: Context,
@@ -14,7 +14,7 @@ class BillingManager(
     private val onError: (String?) -> Unit
 ) : PurchasesUpdatedListener {
 
-    // ✅ Billing 7: enablePendingPurchases() deprecato → usare PendingPurchasesParams
+    // Gli acquisti in sospeso restano abilitati per il prodotto Premium una tantum.
     private val billingClient: BillingClient = BillingClient.newBuilder(context.applicationContext)
         .setListener(this)
         .enablePendingPurchases(
@@ -68,16 +68,30 @@ class BillingManager(
             )
             .build()
 
-        billingClient.queryProductDetailsAsync(params) { result, list ->
+        billingClient.queryProductDetailsAsync(params) { result, queryResult ->
             if (result.responseCode != BillingClient.BillingResponseCode.OK) {
+                productDetails = null
                 onError("Product query failed: ${result.debugMessage}")
                 onPrice(null)
                 return@queryProductDetailsAsync
             }
 
-            val details = list.firstOrNull { it.productId == productId } ?: list.firstOrNull()
+            // Da Billing 8 il callback restituisce QueryProductDetailsResult, non una lista.
+            val details = queryResult.productDetailsList.firstOrNull { it.productId == productId }
+            val offer = details?.oneTimePurchaseOfferDetails
+            if (details == null || offer == null) {
+                productDetails = null
+                onPrice(null)
+                val unfetched = queryResult.unfetchedProductList.firstOrNull { it.productId == productId }
+                if (unfetched != null) {
+                    Log.w("BillingManager", "Product $productId unavailable: ${unfetched.statusCode}")
+                }
+                onError("Premium non disponibile per questo account. Riprova più tardi.")
+                return@queryProductDetailsAsync
+            }
+
             productDetails = details
-            onPrice(details?.oneTimePurchaseOfferDetails?.formattedPrice)
+            onPrice(offer.formattedPrice)
             onError(null)
         }
     }
@@ -90,7 +104,8 @@ class BillingManager(
         }
 
         val details = productDetails
-        if (details == null) {
+        val offer = details?.oneTimePurchaseOfferDetails
+        if (details == null || offer == null) {
             onError("Premium non disponibile (prodotto non trovato). Ricontrolla Play Console / testing.")
             queryProduct()
             return
@@ -98,6 +113,10 @@ class BillingManager(
 
         val pdp = BillingFlowParams.ProductDetailsParams.newBuilder()
             .setProductDetails(details)
+            .apply {
+                // Usa la stessa offerta del prezzo mostrato; i prodotti legacy possono non avere token.
+                offer.offerToken?.takeIf { it.isNotBlank() }?.let { setOfferToken(it) }
+            }
             .build()
 
         val flowParams = BillingFlowParams.newBuilder()
