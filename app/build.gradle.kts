@@ -13,8 +13,8 @@ android {
         applicationId = "com.mende.dontspoilerfyme"
         minSdk = 26
         targetSdk = 36
-        versionCode = 13
-        versionName = "1.2.5"
+        versionCode = 14
+        versionName = "1.2.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -61,5 +61,5 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.4")
-    implementation("com.android.billingclient:billing-ktx:7.0.0")
+    implementation("com.android.billingclient:billing-ktx:9.1.0")
 }
